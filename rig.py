@@ -186,16 +186,16 @@ def checksmote():
 		print "Running ",klass.__name__
 		model = klass()
 		model.minVal,model.maxVal = model.baseline(model.minR, model.maxR)
-		points = return_points(model,50)
+		points = return_points(model,100)
 		madeup = populate(model,points)
 		error = [checkpoints(model,x) for x in madeup]
 		errorCollectorSMOTE[klass.__name__] = error
-		errorCollectorRF[klass.__name__] = randomforest(model,points,madeup)
+		#errorCollectorRF[klass.__name__] = randomforest(model,points,madeup)
 		#print len(randomforest(model,madeup,points))
 		#print
 	#print len(errorCollectorRF)
 	callrdivdemo(errorCollectorSMOTE)
-	callrdivdemo(errorCollectorRF)
+	#callrdivdemo(errorCollectorRF)
 
 def randomforest(model,traindata,testdata):
 	from sklearn.ensemble import RandomForestRegressor
@@ -272,7 +272,25 @@ Output:
 	   3 , 	     Kursawe ,    	0.18  ,  	 0.28	   (*                   |                   ), 0.03,  0.08,  0.18,  0.31,  0.56
 	   4 , 	     Viennet ,    	0.91  ,  	 1.89	   (*                   |                   ), 0.10,  0.50,  0.91,  1.87,  5.76  
 
+100 points
 
+	rank , 	        name ,    	  med   , 	  iqr 
+----------------------------------------------------
+	   1 , 	       DTLZ5 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ6 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ1 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.01
+	   1 , 	     Fonseca ,    	0  ,  	    0.06	   (*                   |                   ), 0.00,  0.00,  0.00,  0.04,  0.27
+	   1 , 	     Osyczka ,    	0.01  ,  	 0.05	   (*                   |                   ), 0.00,  0.00,  0.01,  0.03,  0.37
+	   2 , 	       DTLZ7 ,    	0.06  ,  	 0.08	   (*                   |                   ), 0.01,  0.03,  0.06,  0.10,  0.15
+	   2 , 	        ZDT1 ,    	0.07  ,  	  0.1	   (*                   |                   ), 0.01,  0.04,  0.07,  0.11,  0.19
+	   3 , 	        ZDT3 ,    	0.1  ,  	 0.18	   (*                   |                   ), 0.02,  0.05,  0.10,  0.18,  0.35
+	   4 , 	     Kursawe ,    	0.2  ,  	 0.31	   (*                   |                   ), 0.03,  0.10,  0.20,  0.34,  0.60
+	   5 , 	     Viennet ,    	0.93  ,  	 1.79	   (*-                  |                   ), 0.05,  0.43,  0.93,  1.66,  4.30
+
+
+======================================================================
+
+50 points vs random forest 
 	rank , 	        name ,    	  med   , 	  iqr 
 ----------------------------------------------------
 	   1 , 	       DTLZ5 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
