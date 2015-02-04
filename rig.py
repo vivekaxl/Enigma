@@ -148,8 +148,8 @@ def populate(m,data,k = 3 ,reps = 1000):
 	    neigh = knn(one, data)[1:k + 1];
 	    two = choice(neigh)
 	    newData.append(extrapolate(m,one, two))
-	data.extend(newData)
-	return ([choice(data) for _ in xrange(1000)])
+	newData.extend(data)
+	return ([choice(newData) for _ in xrange(1000)])
 
 def _populate():
 	model = DTLZ1()
@@ -180,16 +180,35 @@ def checkpoints(m,point):
 	return abs(actual-predicted)/actual
 
 def checksmote():
-	errorCollector = {}
+	errorCollectorSMOTE = {}
+	errorCollectorRF = {}
 	for klass in [DTLZ1,DTLZ5,DTLZ6,DTLZ7,Viennet,Osyczka,Fonseca,Kursawe,ZDT1,ZDT3]:
 		print "Running ",klass.__name__
 		model = klass()
 		model.minVal,model.maxVal = model.baseline(model.minR, model.maxR)
-		points = return_points(model,10)
+		points = return_points(model,50)
 		madeup = populate(model,points)
 		error = [checkpoints(model,x) for x in madeup]
-		errorCollector[klass.__name__]=error
-	callrdivdemo(errorCollector)
+		errorCollectorSMOTE[klass.__name__] = error
+		errorCollectorRF[klass.__name__] = randomforest(model,points,madeup)
+		#print len(randomforest(model,madeup,points))
+		#print
+	#print len(errorCollectorRF)
+	callrdivdemo(errorCollectorSMOTE)
+	callrdivdemo(errorCollectorRF)
+
+def randomforest(model,traindata,testdata):
+	from sklearn.ensemble import RandomForestRegressor
+	trainindep = [x.dec for x in traindata]
+	traindep = [x.scores for x in traindata]
+	rf = RandomForestRegressor(n_jobs=-1, n_estimators = 1000).fit(trainindep,traindep)
+	testindep = [x.dec for x in testdata]
+	testdep = rf.predict(testindep)
+	for i,test in enumerate(testdata): test.scores = testdep[i]
+	print "Length of testdata: ",len(testdata)
+	error = [checkpoints(model,x) for x in testdata]
+	return error
+
 
 
 def callrdivdemo(eraCollector,show="%5.2f"):
@@ -221,6 +240,8 @@ if __name__ == '__main__':
 """
 Output:
 
+10 points:
+
         rank ,          name ,            med   ,         iqr 
 ----------------------------------------------------
            1 ,         DTLZ5 ,          0  ,                0      (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
@@ -233,4 +254,49 @@ Output:
            1 ,          ZDT3 ,          0.11  ,          0.18      (*                   |                   ), 0.02,  0.06,  0.11,  0.20,  0.36
            2 ,       Kursawe ,          0.21  ,          0.21      (*                   |                   ), 0.05,  0.13,  0.21,  0.30,  0.56
            3 ,       Viennet ,          0.77  ,           0.4      (*                   |                   ), 0.21,  0.59,  0.77,  0.89,  1.88
+
+50 points:
+
+
+
+	rank , 	        name ,    	  med   , 	  iqr 
+----------------------------------------------------
+	   1 , 	       DTLZ5 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ6 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ1 ,    	0  ,  	     0.01	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.02
+	   1 , 	     Osyczka ,    	0.01  ,  	 0.03	   (*                   |                   ), 0.00,  0.00,  0.01,  0.02,  0.10
+	   1 , 	     Fonseca ,    	0.01  ,  	 0.15	   (*                   |                   ), 0.00,  0.00,  0.01,  0.09,  0.62
+	   1 , 	       DTLZ7 ,    	0.06  ,  	 0.08	   (*                   |                   ), 0.01,  0.04,  0.06,  0.10,  0.16
+	   1 , 	        ZDT1 ,    	0.07  ,  	  0.1	   (*                   |                   ), 0.01,  0.04,  0.07,  0.11,  0.19
+	   2 , 	        ZDT3 ,    	0.1  ,  	 0.15	   (*                   |                   ), 0.02,  0.06,  0.10,  0.18,  0.36
+	   3 , 	     Kursawe ,    	0.18  ,  	 0.28	   (*                   |                   ), 0.03,  0.08,  0.18,  0.31,  0.56
+	   4 , 	     Viennet ,    	0.91  ,  	 1.89	   (*                   |                   ), 0.10,  0.50,  0.91,  1.87,  5.76  
+
+
+	rank , 	        name ,    	  med   , 	  iqr 
+----------------------------------------------------
+	   1 , 	       DTLZ5 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ6 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ1 ,    	0  ,  	    0.01	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.02
+	   1 , 	     Fonseca ,    	0.01  ,  	 0.05	   (*                   |                   ), 0.00,  0.00,  0.01,  0.03,  0.20
+	   1 , 	     Osyczka ,    	0.01  ,  	 0.03	   (*                   |                   ), 0.00,  0.00,  0.01,  0.02,  0.11
+	   1 , 	       DTLZ7 ,    	0.06  ,  	 0.07	   (*                   |                   ), 0.01,  0.03,  0.06,  0.09,  0.15
+	   1 , 	        ZDT1 ,    	0.07  ,  	 0.09	   (*                   |                   ), 0.01,  0.04,  0.07,  0.12,  0.20
+	   2 , 	        ZDT3 ,    	0.1  ,  	 0.18	   (*                   |                   ), 0.02,  0.05,  0.10,  0.19,  0.39
+	   3 , 	     Kursawe ,    	0.22  ,  	  0.3	   (*                   |                   ), 0.04,  0.14,  0.22,  0.37,  0.67
+	   4 , 	     Viennet ,    	0.87  ,  	  1.7	   (*                   |                   ), 0.12,  0.50,  0.87,  1.57,  5.29
+
+	rank , 	        name ,    	  med   , 	  iqr 
+----------------------------------------------------
+	   1 , 	       DTLZ5 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ6 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.00
+	   1 , 	       DTLZ1 ,    	0  ,  	       0	   (*                   |                   ), 0.00,  0.00,  0.00,  0.00,  0.02
+	   1 , 	     Osyczka ,    	0.01  ,  	 0.01	   (*                   |                   ), 0.00,  0.00,  0.01,  0.01,  0.02
+	   2 , 	     Fonseca ,    	0.03  ,  	 0.08	   (*                   |                   ), 0.01,  0.02,  0.03,  0.07,  0.21
+	   2 , 	       DTLZ7 ,    	0.08  ,  	 0.09	   (*                   |                   ), 0.01,  0.04,  0.08,  0.12,  0.19
+	   2 , 	     Kursawe ,    	0.1  ,  	 0.11	   (*                   |                   ), 0.02,  0.06,  0.10,  0.15,  0.31
+	   2 , 	        ZDT1 ,    	0.1  ,  	 0.13	   (*                   |                   ), 0.02,  0.06,  0.10,  0.16,  0.28
+	   2 , 	        ZDT3 ,    	0.11  ,  	 0.16	   (*                   |                   ), 0.02,  0.06,  0.11,  0.19,  0.42
+	   3 , 	     Viennet ,    	0.21  ,  	 0.39	   (*                   |                   ), 0.04,  0.12,  0.21,  0.39,  1.16
+
 """  
