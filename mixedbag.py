@@ -142,14 +142,14 @@ def return_points(model,num_points):
 #SMOTE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 def populate(m,data,k = 3 ,reps = 20):
-	newData = []
-	for _ in xrange(reps):
-	  for one in data:
+  newData = []
+  for count in xrange(reps):
+    for one in data:
 	    neigh = knn(one, data)[1:k + 1];
 	    two = choice(neigh)
 	    newData.append(extrapolate(m,one, two))
-	newData.extend(data)
-	return ([choice(newData) for _ in xrange(1000)])
+  newData.extend(data)
+  return ([choice(newData) for _ in xrange(1000)])
 
 def _populate():
 	model = DTLZ1()
@@ -179,23 +179,40 @@ def checkpoints(m,point):
 	predicted = point.scores
 	return abs(actual-predicted)/actual
 
-def checksmote():
-	errorCollectorSMOTE = {}
-	errorCollectorRF = {}
-	for klass in [DTLZ1,DTLZ5,DTLZ6,DTLZ7,Viennet,Osyczka,Fonseca,Kursawe,ZDT1,ZDT3]:
-		print "Running ",klass.__name__
-		model = klass()
-		model.minVal,model.maxVal = model.baseline(model.minR, model.maxR)
-		points = return_points(model,100)
-		madeup = populate(model,points)
-		error = [checkpoints(model,x) for x in madeup]
-		errorCollectorSMOTE[klass.__name__] = error
-		#errorCollectorRF[klass.__name__] = randomforest(model,points,madeup)
-		#print len(randomforest(model,madeup,points))
-		#print
-	#print len(errorCollectorRF)
-	callrdivdemo(errorCollectorSMOTE)
+def checksmote(probability = 0.5):
+  print "probability: ",probability
+  errorCollectorSMOTE = {}
+  errorCollectorRF = {}
+  for klass in [DTLZ1,DTLZ5,DTLZ6,DTLZ7,Viennet,Osyczka,Fonseca,Kursawe,ZDT1,ZDT3]:
+    print "Running ",klass.__name__
+    model = klass()
+    model.minVal,model.maxVal = model.baseline(model.minR, model.maxR)
+    points = return_points(model,100)
+    madeup = populate(model,points)
+    rfpoints = []
+    for x in madeup:
+     if random.random() < probability:
+      rfpoints.append(x)
+      madeup.remove(x)
+    print "Points for RF: ",len(rfpoints)
+    print "Points for SMOTE: ",len(madeup)
+    madeup.extend(randomforest(model,points,rfpoints))
+    print "Points for madeup: ",len(madeup)
+    print madeup[-1].scores
+    error = [checkpoints(model,x) for x in madeup]
+    errorCollectorSMOTE[klass.__name__] = error
+      #errorCollectorRF[klass.__name__] = randomforest(model,points,madeup)
+    #print len(randomforest(model,madeup,points))
+    #print
+  #print len(errorCollectorRF)
+  
+  callrdivdemo(errorCollectorSMOTE)
 	#callrdivdemo(errorCollectorRF)
+ 
+def multipleRuns():
+  probs = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+  for prob in probs:
+    checksmote(prob)
 
 def randomforest(model,traindata,testdata):
 	from sklearn.ensemble import RandomForestRegressor
@@ -205,9 +222,9 @@ def randomforest(model,traindata,testdata):
 	testindep = [x.dec for x in testdata]
 	testdep = rf.predict(testindep)
 	for i,test in enumerate(testdata): test.scores = testdep[i]
-	print "Length of testdata: ",len(testdata)
-	error = [checkpoints(model,x) for x in testdata]
-	return error
+	#print "Length of testdata: ",len(testdata)
+	#error = [checkpoints(model,x) for x in testdata]
+	return testdata
 
 
 def callrdivdemo(eraCollector,show="%5.2f"):
@@ -233,7 +250,8 @@ def callrdivdemo(eraCollector,show="%5.2f"):
 if __name__ == '__main__':
   random.seed(0)
   #_populate()
-  checksmote()
+  #checksmote()
+  multipleRuns()
   #_tileX()
 
 """
@@ -316,4 +334,19 @@ Output:
 	   2 , 	        ZDT3 ,    	0.11  ,  	 0.16	   (*                   |                   ), 0.02,  0.06,  0.11,  0.19,  0.42
 	   3 , 	     Viennet ,    	0.21  ,  	 0.39	   (*                   |                   ), 0.04,  0.12,  0.21,  0.39,  1.16
 
-"""  
+  
+
+
+Models  0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9
+DTLZ5 0 0 0 0 0 0 0 0 0
+DTLZ6 0 0 0 0 0 0 0 0 0
+DTLZ1 0 0 0 0 0 0 0 0 0
+Fonseca 0 0 0 0 0 0 0.01  0 0
+Osycka  0.01  0.01  0.01  0.01  0.01  0.01  0.01  0.01  0.01
+DTLZ7 0.06  0.06  0.06  0.07  0.08  0.07  0.08  0.07  0.08
+ZDT1  0.07  0.07  0.08  0.07  0.08  0.07  0.09  0.08  0.09
+ZDT3  0.11  0.08  0.12  0.11  0.1 0.1 0.11  0.11  0.11
+Kursawe 0.19  0.12  0.16  0.15  0.12  0.14  0.13  0.13  0.11
+Viennet 0.71  0.66  0.72  0.39  0.31  0.28  0.22  0.36  0.3
+
+"""
